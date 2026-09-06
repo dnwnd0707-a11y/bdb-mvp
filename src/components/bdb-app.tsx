@@ -404,6 +404,12 @@ const wizardStepDescriptions = [
   "중개사가 가장 먼저 맞춰야 할 조건을 3개까지 정합니다.",
   "공개 전 요청서 내용을 한 번에 확인합니다.",
 ];
+const agentProposalStepDescriptions = [
+  "고객이 원하는 지역, 예산, 필수 조건을 먼저 확인합니다.",
+  "요청의 거래유형과 맞는 보유 매물만 골라 제안합니다.",
+  "선택한 매물마다 법정 상한 이내의 제안 중개보수를 입력합니다.",
+  "고객에게 보낼 매물과 제안 중개보수를 마지막으로 확인합니다.",
+];
 const roomStructureOptions = ["원룸", "1.5룸", "투룸", "구조 상관없음"];
 const buildingTypeOptions = ["일반 원·투룸", "오피스텔", "상관없음"];
 const applianceOptions = ["에어컨", "냉장고", "세탁기", "취사시설", "옷장", "침대", "전자레인지", "TV"];
@@ -1679,6 +1685,7 @@ export function BdbApp({
   const visibleProposals = proposals.filter(
     (proposal) => proposal.requestId === activeRequestId
   );
+  const displayedProposals = role === "agent" ? proposals : visibleProposals;
   const selectedProposal = visibleProposals[0];
   const proposalComparisonItems: ProposalComparisonItem[] = visibleProposals.flatMap((proposal) =>
     proposal.properties.map((property) => ({
@@ -3344,11 +3351,59 @@ export function BdbApp({
             </nav>
 
             {agentTab === "home" ? (
-              <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-                <article className="rounded-2xl border border-[#DEE4E0] bg-white p-5 soft-shadow">
-                  <div className="flex items-center justify-between gap-3">
+              <section className="grid gap-4">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {[
+                    {
+                      title: "확인할 고객 요청",
+                      value: `${dashboardStats.openRequests}건`,
+                      description: "대구 서구 원룸·투룸 조건 요청을 확인합니다.",
+                      action: "요청 보기",
+                      onClick: () => setAgentTab("requests"),
+                    },
+                    {
+                      title: "제안 가능한 보유 매물",
+                      value: `${dashboardStats.feedTotal}건`,
+                      description: "가격, 관리비, 주요 조건과 갱신 상태를 관리합니다.",
+                      action: "매물 관리",
+                      onClick: () => setAgentTab("properties"),
+                    },
+                    {
+                      title: "보낸 제안",
+                      value: `${dashboardStats.activeProposals}건`,
+                      description: "고객별 제안 매물과 제안 중개보수를 확인합니다.",
+                      action: "제안 관리",
+                      onClick: () => setAgentTab("sent"),
+                    },
+                    {
+                      title: "방문 예약·채팅",
+                      value: `${dashboardStats.appointmentTotal}건`,
+                      description: "상담과 방문 일정을 제안 화면에서 이어갑니다.",
+                      action: "일정 보기",
+                      onClick: () => setAgentTab("appointments"),
+                    },
+                  ].map((item) => (
+                    <button
+                      key={item.title}
+                      type="button"
+                      onClick={item.onClick}
+                      className="rounded-2xl border border-[#DEE4E0] bg-white p-4 text-left transition hover:border-[#356556] hover:bg-[#F7F5EF] focus:outline-none focus:ring-2 focus:ring-[#183F35] focus:ring-offset-2"
+                    >
+                      <span className="block text-sm font-extrabold text-[#356556]">{item.title}</span>
+                      <span className="mt-2 block text-3xl font-extrabold text-[#1D2723]">{item.value}</span>
+                      <span className="mt-2 block min-h-10 text-sm leading-5 text-[#69736F]">{item.description}</span>
+                      <span className="mt-4 inline-flex min-h-9 items-center rounded-xl bg-[#FFD84D] px-3 text-xs font-extrabold text-[#183F35]">
+                        {item.action}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+                  <article className="rounded-2xl border border-[#DEE4E0] bg-white p-5 soft-shadow">
+                    <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-extrabold text-[#356556]">최근 고객 요청</p>
+                      <p className="text-sm font-extrabold text-[#356556]">오늘 먼저 볼 고객 요청</p>
                       <h3 className="mt-1 text-xl font-extrabold text-[#1D2723]">
                         제안 가능한 요청 {requests.length}건
                       </h3>
@@ -3360,8 +3415,8 @@ export function BdbApp({
                     >
                       전체 요청 보기
                     </button>
-                  </div>
-                  <div className="mt-4 grid gap-3">
+                    </div>
+                    <div className="mt-4 grid gap-3">
                     {requests.slice(0, 3).map((request) => (
                       <button
                         key={request.id}
@@ -3373,20 +3428,26 @@ export function BdbApp({
                         className="rounded-2xl border border-[#DEE4E0] bg-[#F7F5EF] p-4 text-left transition hover:border-[#356556]"
                       >
                         <span className="block font-extrabold text-[#1D2723]">{request.title}</span>
-                        <span className="mt-2 block text-sm leading-6 text-[#69736F]">
-                          {request.transactionType} · {request.regions.join(" · ")} · {request.budgetSummary ?? `${request.depositRange} · ${request.rentRange}`}
+                        <span className="mt-2 flex flex-wrap gap-2">
+                          <Chip>{request.transactionType}</Chip>
+                          <Chip>{request.regions.join(" · ")}</Chip>
+                          <Chip>{request.housingType}</Chip>
                         </span>
-                        <span className="mt-2 inline-flex rounded-full bg-[#FFD84D] px-3 py-1 text-xs font-extrabold text-[#183F35]">
-                          받은 제안 {request.proposalCount}건
+                        <span className="mt-2 block text-sm leading-6 text-[#69736F]">
+                          {request.budgetSummary ?? `${request.depositRange} · ${request.rentRange}`}
+                        </span>
+                        <span className="mt-3 inline-flex rounded-full bg-[#FFD84D] px-3 py-1 text-xs font-extrabold text-[#183F35]">
+                          받은 제안 {request.proposalCount}건 · 제안하기
                         </span>
                       </button>
                     ))}
-                  </div>
-                </article>
+                    </div>
+                  </article>
 
-                <article className="rounded-2xl border border-[#DEE4E0] bg-white p-5 soft-shadow">
-                  <p className="text-sm font-extrabold text-[#356556]">확인이 필요한 항목</p>
-                  <div className="mt-4 grid gap-3">
+                  <article className="rounded-2xl border border-[#DEE4E0] bg-white p-5 soft-shadow">
+                    <p className="text-sm font-extrabold text-[#356556]">운영 체크</p>
+                    <h3 className="mt-1 text-xl font-extrabold text-[#1D2723]">계약까지 이어질 항목</h3>
+                    <div className="mt-4 grid gap-3">
                     <button
                       type="button"
                       onClick={() => {
@@ -3426,8 +3487,9 @@ export function BdbApp({
                         답변이 필요한 대화는 보낸 제안 화면에서 바로 이어갑니다.
                       </span>
                     </button>
-                  </div>
-                </article>
+                    </div>
+                  </article>
+                </section>
               </section>
             ) : null}
           </section>
@@ -3483,12 +3545,15 @@ export function BdbApp({
         )}
 
         {showAgentDashboard && agentTab === "properties" ? (
-        <section className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
+        <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-lg border border-[#d9d0c0] bg-white/95 p-5 soft-shadow">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-[#54715b]">중개사 매물 피드</p>
-                <h2 className="text-xl font-bold">등록은 무료, 계약 성사 시 정산</h2>
+                <p className="text-sm font-semibold text-[#54715b]">보유 매물 등록</p>
+                <h2 className="text-xl font-bold">고객 요청에 제안할 매물을 준비합니다</h2>
+                <p className="mt-2 text-sm leading-6 text-[#69736F]">
+                  둘러보기에서는 예시 매물이 화면에만 추가됩니다. 실제 저장은 발생하지 않습니다.
+                </p>
               </div>
               <Building2 size={22} aria-hidden="true" />
             </div>
@@ -3646,12 +3711,12 @@ export function BdbApp({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-[#54715b]">
-                  {showBuyerDashboard ? "중개사 매물 피드 둘러보기" : "다방/직방형 피드"}
+                  {showBuyerDashboard ? "중개사 매물 피드 둘러보기" : "보유 매물 관리"}
                 </p>
                 <h2 className="text-xl font-bold">
                   {showBuyerDashboard
                     ? "인증 중개사가 올린 원룸·투룸 예시 매물"
-                    : "사무소가 보유 매물을 쌓아두는 공간"}
+                    : "요청에 바로 제안할 수 있는 매물"}
                 </h2>
               </div>
               <span className="rounded-full bg-[#fff8db] px-3 py-1 text-xs font-bold text-[#6b5a16]">
@@ -3662,7 +3727,7 @@ export function BdbApp({
               {filteredAgentProperties.map((property) => (
                 <article
                   key={property.id}
-                  className="rounded-lg border border-[#d9d0c0] bg-[#fbfaf6] p-4"
+                  className="rounded-2xl border border-[#DEE4E0] bg-[#fbfaf6] p-4"
                 >
                   <PhotoTile
                     src={property.photoUrls[0]}
@@ -3677,19 +3742,22 @@ export function BdbApp({
                     </div>
                     <MapPin size={18} aria-hidden="true" />
                   </div>
-                  <span className="mt-3 inline-flex rounded-full bg-[#edf6ef] px-3 py-1 text-xs font-bold text-[#33523a]">
-                    {completedPropertyIds.includes(property.id)
-                      ? "계약 완료"
-                      : renewalNeededPropertyIds.includes(property.id)
-                        ? "갱신 필요"
-                        : "등록 중"}
-                  </span>
-                  <p className="mt-3 text-sm font-semibold text-[#2f6f45]">
-                    {property.price}
-                  </p>
-                  <p className="mt-1 text-sm text-[#677064]">
-                    {property.area} · {property.floor} · {property.maintenanceFee}
-                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Chip>{getPropertyTransactionType(property)}</Chip>
+                    <span className="inline-flex items-center rounded-full border border-[#cfd8c9] bg-white px-3 py-1 text-xs font-semibold text-[#33523a]">
+                      {completedPropertyIds.includes(property.id)
+                        ? "계약 완료"
+                        : renewalNeededPropertyIds.includes(property.id)
+                          ? "30일 갱신 필요"
+                          : "계약 가능"}
+                    </span>
+                  </div>
+                  <div className="mt-3 grid gap-2 rounded-xl border border-[#DEE4E0] bg-white px-3 py-3 text-sm leading-6 text-[#69736F]">
+                    <p><strong className="text-[#1D2723]">가격</strong> · {getPropertyBudgetLabel(property)}</p>
+                    <p><strong className="text-[#1D2723]">관리비</strong> · {property.maintenanceFee}</p>
+                    <p><strong className="text-[#1D2723]">월 고정지출</strong> · {formatManwon(getPropertyMonthlyFixedCost(property) / 10_000)}</p>
+                    <p><strong className="text-[#1D2723]">면적·층수</strong> · {property.area} · {property.floor}</p>
+                  </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {property.features.map((feature) => (
                       <Chip key={feature}>{feature}</Chip>
@@ -3762,11 +3830,14 @@ export function BdbApp({
           ) : null}
 
           {showAgentDashboard ? (
-          <div className="rounded-lg border border-[#d9d0c0] bg-white/95 p-5 soft-shadow">
+          <div className="rounded-2xl border border-[#DEE4E0] bg-white/95 p-5 soft-shadow">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-[#54715b]">조건 매칭 요청서</p>
-                <h2 className="text-xl font-bold">고객 요청 목록</h2>
+                <h2 className="text-xl font-bold">고객 요청을 보고 역제안합니다</h2>
+                <p className="mt-2 text-sm leading-6 text-[#69736F]">
+                  예산과 필수 조건을 먼저 확인한 뒤, 거래유형이 맞는 보유 매물을 골라 제안하세요.
+                </p>
               </div>
               {!isAgentProposalFlow ? (
                 <div className="flex flex-wrap gap-2">
@@ -3782,13 +3853,13 @@ export function BdbApp({
               ) : null}
             </div>
             {!isAgentProposalFlow ? (
-            <div className="mt-5 grid gap-3">
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
               {requests.map((request) => (
                 <article
                   key={request.id}
-                  className={`rounded-lg border p-4 text-left transition ${
+                  className={`rounded-2xl border p-4 text-left transition ${
                     activeRequestId === request.id
-                      ? "border-[#2f6f45] bg-[#edf6ef]"
+                      ? "border-[#183F35] bg-[#EAF2EE]"
                       : "border-[#d9d0c0] bg-white hover:bg-[#fbfaf6]"
                   }`}
                 >
@@ -3800,20 +3871,20 @@ export function BdbApp({
                         {request.regions.join(" · ")}
                       </p>
                     </div>
-                    <span className="rounded-full bg-[#ffe24a] px-3 py-1 text-xs font-bold">
-                      제안 {request.proposalCount}
+                    <span className="rounded-full bg-[#ffe24a] px-3 py-1 text-xs font-bold text-[#183F35]">
+                      받은 제안 {request.proposalCount}건
                     </span>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Chip>{request.transactionType}</Chip>
                     <Chip>{request.housingType}</Chip>
-                    <Chip>{request.depositRange}</Chip>
-                    <Chip>{request.rentRange}</Chip>
+                    <Chip>{request.moveIn}</Chip>
                   </div>
-                  <p className="mt-3 rounded-lg border border-[#e4d7bb] bg-[#fff8db] px-3 py-2 text-xs font-semibold leading-5 text-[#6b5a16]">
-                    {request.budgetSummary ?? `${request.depositRange} · ${request.rentRange} · ${request.maintenanceFee}`}
-                  </p>
-                  <div className="mt-3 grid gap-2 rounded-lg border border-[#d9d0c0] bg-white/80 p-3 text-xs leading-5 text-[#586155]">
+                  <div className="mt-3 grid gap-2 rounded-xl border border-[#e4d7bb] bg-[#fff8db] px-3 py-3 text-sm leading-6 text-[#6b5a16]">
+                    <p><strong className="text-[#1D2723]">희망 지역</strong> · {request.regions.join(" · ")}</p>
+                    <p><strong className="text-[#1D2723]">예산</strong> · {request.budgetSummary ?? `${request.depositRange} · ${request.rentRange} · ${request.maintenanceFee}`}</p>
+                  </div>
+                  <div className="mt-3 grid gap-2 rounded-xl border border-[#DEE4E0] bg-white/80 p-3 text-xs leading-5 text-[#586155]">
                     <p>
                       <strong className="text-[#20251f]">필수조건:</strong>{" "}
                       {request.mustHaves
@@ -3879,6 +3950,9 @@ export function BdbApp({
                       <h3 className="mt-1 text-xl font-extrabold text-[#1D2723]">
                         {["고객 요청 확인", "제안할 매물 선택", "중개보수 입력", "최종 확인 및 전송"][agentProposalStep]}
                       </h3>
+                      <p className="mt-2 text-sm leading-6 text-[#69736F]">
+                        {agentProposalStepDescriptions[agentProposalStep]}
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -3902,12 +3976,29 @@ export function BdbApp({
                   <div className="rounded-2xl border border-[#DEE4E0] bg-white p-4">
                     {agentProposalStep === 0 ? (
                       <div className="grid gap-3 text-sm leading-6 text-[#69736F]">
-                        <p><strong className="text-[#1D2723]">거래유형</strong> · {activeRequest.transactionType}</p>
-                        <p><strong className="text-[#1D2723]">희망 지역</strong> · {activeRequest.regions.join(" · ")}</p>
-                        <p><strong className="text-[#1D2723]">예산</strong> · {activeRequest.budgetSummary ?? `${activeRequest.depositRange} · ${activeRequest.rentRange} · ${activeRequest.maintenanceFee}`}</p>
-                        <p><strong className="text-[#1D2723]">필수 조건</strong> · {activeRequest.mustHaves.slice(0, 5).join(", ")}</p>
-                        <p><strong className="text-[#1D2723]">우선 조건</strong> · {activeRequest.mustHaves.find((item) => item.startsWith("우선조건:"))?.replace("우선조건: ", "") ?? "채광, 조용한 주변"}</p>
-                        <p><strong className="text-[#1D2723]">협의 가능 조건</strong> · {activeRequest.mustHaves.find((item) => item.startsWith("협의조건:"))?.replace("협의조건: ", "") ?? "예산 조정 가능"}</p>
+                        <div>
+                          <h4 className="text-lg font-extrabold text-[#1D2723]">{activeRequest.title}</h4>
+                          <DemoDataLabel />
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="rounded-xl border border-[#DEE4E0] bg-[#F7F5EF] p-3">
+                            <strong className="block text-[#1D2723]">거래유형</strong>
+                            <span>{activeRequest.transactionType}</span>
+                          </div>
+                          <div className="rounded-xl border border-[#DEE4E0] bg-[#F7F5EF] p-3">
+                            <strong className="block text-[#1D2723]">희망 지역</strong>
+                            <span>{activeRequest.regions.join(" · ")}</span>
+                          </div>
+                          <div className="rounded-xl border border-[#DEE4E0] bg-[#F7F5EF] p-3 sm:col-span-2">
+                            <strong className="block text-[#1D2723]">예산</strong>
+                            <span>{activeRequest.budgetSummary ?? `${activeRequest.depositRange} · ${activeRequest.rentRange} · ${activeRequest.maintenanceFee}`}</span>
+                          </div>
+                        </div>
+                        <div className="grid gap-2 rounded-xl border border-[#DEE4E0] bg-white p-3">
+                          <p><strong className="text-[#1D2723]">필수 조건</strong> · {activeRequest.mustHaves.slice(0, 5).join(", ")}</p>
+                          <p><strong className="text-[#1D2723]">우선 조건</strong> · {activeRequest.mustHaves.find((item) => item.startsWith("우선조건:"))?.replace("우선조건: ", "") ?? "채광, 조용한 주변"}</p>
+                          <p><strong className="text-[#1D2723]">협의 가능 조건</strong> · {activeRequest.mustHaves.find((item) => item.startsWith("협의조건:"))?.replace("협의조건: ", "") ?? "예산 조정 가능"}</p>
+                        </div>
                       </div>
                     ) : null}
 
@@ -3917,6 +4008,9 @@ export function BdbApp({
                           {activeRequest.transactionType === "둘 다 가능"
                             ? "월세와 전세 매물을 모두 선택할 수 있습니다."
                             : `${activeRequest.transactionType} 요청이므로 ${activeRequest.transactionType} 매물만 선택할 수 있습니다.`}
+                        </p>
+                        <p className="text-xs font-extrabold text-[#356556]">
+                          선택한 매물 {selectedProposalPropertyIds.length}개 · 제안 가능 매물 {proposalCompatibleProperties.length}개
                         </p>
                         {proposalSelectionError || selectedProposalPropertyIds.length === 0 ? (
                           <p className="rounded-xl border border-[#C84B45] bg-[#fff3f1] px-3 py-2 text-sm font-extrabold text-[#C84B45]">
@@ -4141,8 +4235,13 @@ export function BdbApp({
                   {showBuyerDashboard ? "공인중개사의 매물 제안 확인" : "보낸 제안 관리"}
                 </p>
                 <h2 className="text-xl font-bold">
-                  {showBuyerDashboard ? "매물·중개보수 비교" : "매물·중개보수 제안 현황"}
+                  {showBuyerDashboard ? "매물·중개보수 비교" : "고객별 매물·중개보수 제안 현황"}
                 </h2>
+                {!showBuyerDashboard ? (
+                  <p className="mt-2 text-sm leading-6 text-[#69736F]">
+                    어떤 고객 요청에 어떤 매물과 제안 중개보수를 보냈는지 한눈에 확인합니다.
+                  </p>
+                ) : null}
               </div>
               <Search size={22} aria-hidden="true" />
             </div>
@@ -4351,13 +4450,15 @@ export function BdbApp({
                   </div>
                 )}
               </div>
-            ) : visibleProposals.length === 0 ? (
+            ) : displayedProposals.length === 0 ? (
               <div className="mt-5 rounded-lg border border-dashed border-[#c8beae] p-8 text-center text-[#677064]">
                 아직 이 요청서에 도착한 제안이 없습니다.
               </div>
             ) : (
               <div className="mt-5 grid gap-4">
-                {visibleProposals.map((proposal) => (
+                {displayedProposals.map((proposal) => {
+                  const proposalRequest = requests.find((request) => request.id === proposal.requestId);
+                  return (
                   <article
                     key={proposal.id}
                     className={`rounded-lg border p-4 ${
@@ -4372,6 +4473,11 @@ export function BdbApp({
                           {proposal.officeName} · {proposal.agentName}
                         </p>
                         <DemoDataLabel />
+                        {!showBuyerDashboard && proposalRequest ? (
+                          <p className="mt-2 rounded-xl border border-[#DEE4E0] bg-[#F7F5EF] px-3 py-2 text-sm font-extrabold leading-6 text-[#183F35]">
+                            고객 요청 · {proposalRequest.title}
+                          </p>
+                        ) : null}
                         <p className="line-clamp-2 mt-1 text-sm leading-6 text-[#586155]">
                           {proposal.message}
                         </p>
@@ -4428,20 +4534,11 @@ export function BdbApp({
                               비교하기
                             </button>
                           ) : null}
-                          <p className="mt-2 text-sm font-semibold text-[#2f6f45]">
-                            {property.price}
-                          </p>
-                          <p className="mt-1 text-sm font-bold text-[#183F35]">
-                            월 고정지출{" "}
-                            {formatter.format(
-                              Math.round(property.monthlyRent / 10000) +
-                                Number(property.maintenanceFee.match(/\d+/)?.[0] ?? 0)
-                            )}
-                            만원
-                          </p>
-                          <p className="mt-1 text-sm text-[#677064]">
-                            {property.area} · {property.floor} · {property.maintenanceFee}
-                          </p>
+                          <div className="mt-3 grid gap-2 rounded-xl border border-[#DEE4E0] bg-white px-3 py-3 text-sm leading-6 text-[#69736F]">
+                            <p><strong className="text-[#1D2723]">거래금액</strong> · {getPropertyBudgetLabel(property)}</p>
+                            <p><strong className="text-[#1D2723]">월 고정지출</strong> · {formatManwon(getPropertyMonthlyFixedCost(property) / 10_000)}</p>
+                            <p><strong className="text-[#1D2723]">관리비·면적·층수</strong> · {property.maintenanceFee} · {property.area} · {property.floor}</p>
+                          </div>
                           <div className="mt-3 flex flex-wrap gap-2">
                             {property.features.map((feature) => (
                               <Chip key={feature}>{feature}</Chip>
@@ -4514,7 +4611,8 @@ export function BdbApp({
                       </div>
                     </div>
                   </article>
-                ))}
+                  );
+                })}
               </div>
             )}
             {showBuyerDashboard && !isComparisonMode && selectedComparisonItems.length > 0 ? (
