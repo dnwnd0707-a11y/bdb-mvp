@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+:root {
+  --bdb-primary: #183f35;
+  --bdb-supporting-green: #356556;
+  --bdb-pale-green: #eaf2ee;
+  --bdb-accent-yellow: #ffd84d;
+  --bdb-warm-background: #f7f5ef;
+  --bdb-surface: #ffffff;
+  --bdb-main-text: #1d2723;
+  --bdb-muted-text: #69736f;
+  --bdb-border: #dee4e0;
+  --bdb-error: #c84b45;
+  --background: var(--bdb-warm-background);
+  --foreground: var(--bdb-main-text);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  min-width: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  overflow-x: hidden;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  outline-color: var(--bdb-accent-yellow);
+  outline-offset: 3px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(255, 216, 77, 0.88);
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.app-shell {
+  min-height: 100vh;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.soft-shadow {
+  box-shadow: 0 8px 30px rgba(24, 63, 53, 0.08);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.line-clamp-2,
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  -webkit-line-clamp: 3;
+}
+
+.map-grid {
+  background-image:
+    linear-gradient(rgba(32, 37, 31, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(32, 37, 31, 0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
