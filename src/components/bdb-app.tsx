@@ -105,6 +105,12 @@ const demoOfficeName = "○○공인중개사사무소";
 
 const formatter = new Intl.NumberFormat("ko-KR");
 
+function getProposalStatusLabel(status: Proposal["status"]) {
+  if (status === "chatting") return "상담 중";
+  if (status === "hidden") return "제안 확인 전";
+  return "제안 확인 전";
+}
+
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-[7rem] rounded-lg border border-[#d9d0c0] bg-white px-4 py-3 text-center">
@@ -1644,6 +1650,7 @@ export function BdbApp({
   const [agentProposalStep, setAgentProposalStep] = useState<AgentProposalStep>(0);
   const [isAgentProposalFlow, setIsAgentProposalFlow] = useState(false);
   const [propertyFilter, setPropertyFilter] = useState<PropertyFilter>("all");
+  const [isPropertyFormOpen, setIsPropertyFormOpen] = useState(false);
   const [onboardingRole, setOnboardingRole] = useState<Role>("buyer");
   const [agentKind, setAgentKind] = useState<AgentKind>("representative");
   const [profileName, setProfileName] = useState("데모 사용자");
@@ -2269,6 +2276,7 @@ export function BdbApp({
     setFeedPhotoUrls([]);
     setFeedPhotoError("");
     setPropertyFilter("active");
+    setIsPropertyFormOpen(false);
     setNotice(
       "매물이 사무소 피드에 무료 등록되었습니다. BDB 플랫폼 이용료는 이 앱을 통해 계약이 성사될 때만 발생합니다."
     );
@@ -3562,7 +3570,7 @@ export function BdbApp({
 
         {showAgentDashboard && agentTab === "properties" ? (
         <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-lg border border-[#d9d0c0] bg-white/95 p-5 soft-shadow">
+          <div className="order-2 rounded-lg border border-[#d9d0c0] bg-white/95 p-5 soft-shadow">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-[#54715b]">보유 매물 등록</p>
@@ -3574,8 +3582,18 @@ export function BdbApp({
               <Building2 size={22} aria-hidden="true" />
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setIsPropertyFormOpen((current) => !current)}
+                className={`min-h-10 rounded-xl border px-3 text-sm font-extrabold ${
+                  isPropertyFormOpen
+                    ? "border-[#183F35] bg-[#EAF2EE] text-[#183F35]"
+                    : "border-[#DEE4E0] bg-white text-[#183F35]"
+                }`}
+              >
+                {isPropertyFormOpen ? "새 매물 등록 접기" : "새 매물 등록"}
+              </button>
               {([
-                ["active", "새 매물 등록"],
                 ["all", "전체"],
                 ["active", "등록 중"],
                 ["renewal", "갱신 필요"],
@@ -3586,7 +3604,7 @@ export function BdbApp({
                   type="button"
                   onClick={() => setPropertyFilter(filter)}
                   className={`min-h-10 rounded-xl border px-3 text-sm font-extrabold ${
-                    propertyFilter === filter && label !== "새 매물 등록"
+                    propertyFilter === filter
                       ? "border-[#183F35] bg-[#EAF2EE] text-[#183F35]"
                       : "border-[#DEE4E0] bg-white text-[#69736F]"
                   }`}
@@ -3595,6 +3613,7 @@ export function BdbApp({
                 </button>
               ))}
             </div>
+            {isPropertyFormOpen ? (
             <form onSubmit={publishFeedProperty} className="mt-5 grid gap-3">
               <p className="text-sm font-extrabold text-[#356556]">1. 기본 정보</p>
               <input
@@ -3660,26 +3679,6 @@ export function BdbApp({
                   defaultValue="반려동물 가능, 두류역 접근, 분리형 주방"
                 />
               </div>
-              <p className="text-sm font-extrabold text-[#356556]">6. 중개보수 정보</p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input
-                  name="proposedBrokerageFee"
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  max="50000"
-                  placeholder="제안 중개보수"
-                  className="min-h-11 rounded-lg border border-[#d9d0c0] px-3"
-                  defaultValue="45000"
-                />
-                <div className="rounded-lg border border-[#DEE4E0] bg-[#F7F5EF] px-4 py-3 text-sm leading-6 text-[#586155]">
-                  예시 입력값 45,000원 · 법정 상한 이하에서 제안합니다.
-                </div>
-              </div>
-              <p className="rounded-lg border border-[#e4d7bb] bg-[#fff8db] px-4 py-3 text-sm leading-6 text-[#6b5a16]">
-                요율표로 법정 최대보수를 자동 계산합니다. 중개사는 계산된 최대보수
-                이하에서 더 낮은 중개보수를 제안할 수 있습니다.
-              </p>
               <p className="text-sm font-extrabold text-[#356556]">5. 사진 등록</p>
               <label className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[#b9c7b4] bg-[#edf6ef] p-4 text-center text-sm font-semibold text-[#33523a]">
                 <Upload size={22} aria-hidden="true" />
@@ -3708,6 +3707,26 @@ export function BdbApp({
                   ))}
                 </div>
               ) : null}
+              <p className="text-sm font-extrabold text-[#356556]">6. 중개보수 정보</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <input
+                  name="proposedBrokerageFee"
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  max="50000"
+                  placeholder="제안 중개보수"
+                  className="min-h-11 rounded-lg border border-[#d9d0c0] px-3"
+                  defaultValue="45000"
+                />
+                <div className="rounded-lg border border-[#DEE4E0] bg-[#F7F5EF] px-4 py-3 text-sm leading-6 text-[#586155]">
+                  예시 입력값 45,000원 · 법정 상한 이하에서 제안합니다.
+                </div>
+              </div>
+              <p className="rounded-lg border border-[#e4d7bb] bg-[#fff8db] px-4 py-3 text-sm leading-6 text-[#6b5a16]">
+                요율표로 법정 최대보수를 자동 계산합니다. 중개사는 계산된 최대보수
+                이하에서 더 낮은 중개보수를 제안할 수 있습니다.
+              </p>
               <p className="text-sm font-extrabold text-[#356556]">7. 최종 확인</p>
               <div className="rounded-lg border border-[#DEE4E0] bg-white px-4 py-3 text-sm leading-6 text-[#586155]">
                 등록 전 제목, 위치, 가격, 사진, 제안 중개보수를 확인합니다. 둘러보기에서는
@@ -3721,9 +3740,14 @@ export function BdbApp({
                 <ChevronRight size={17} aria-hidden="true" />
               </button>
             </form>
+            ) : (
+              <div className="mt-5 rounded-2xl border border-[#DEE4E0] bg-[#F7F5EF] px-4 py-4 text-sm leading-6 text-[#69736F]">
+                새 매물 등록은 필요할 때만 펼쳐서 입력합니다. 기본 화면에서는 보유 매물 목록을 먼저 확인하세요.
+              </div>
+            )}
           </div>
 
-          <div className="rounded-lg border border-[#d9d0c0] bg-white/95 p-5 soft-shadow">
+          <div className="order-1 rounded-lg border border-[#d9d0c0] bg-white/95 p-5 soft-shadow">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-[#54715b]">
@@ -3902,7 +3926,7 @@ export function BdbApp({
                   </div>
                   <div className="mt-3 grid gap-2 rounded-xl border border-[#DEE4E0] bg-white/80 p-3 text-xs leading-5 text-[#586155]">
                     <p>
-                      <strong className="text-[#20251f]">필수조건:</strong>{" "}
+                      <strong className="text-[#20251f]">필수 조건</strong> ·{" "}
                       {request.mustHaves
                         .filter((item) => !["월세", "전세", "둘 다 가능"].includes(item) && !item.startsWith("대구광역시") && !item.startsWith("우선조건:") && !item.startsWith("협의조건:") && !item.startsWith("요청 만료일:") && !item.startsWith("필요한 옵션:") && !item.startsWith("보안 선호:") && !item.startsWith("피하고 싶은 환경:") && !item.startsWith("가까우면 좋은 시설:") && item !== "조건 외 제안 허용" && item !== "필수조건 모두 충족한 매물만")
                         .slice(0, 4)
@@ -3914,13 +3938,13 @@ export function BdbApp({
                         ?.replace(`${label}: `, "");
                       return value ? (
                         <p key={label}>
-                          <strong className="text-[#20251f]">{label}:</strong>{" "}
+                          <strong className="text-[#20251f]">{label}</strong> ·{" "}
                           {value}
                         </p>
                       ) : null;
                     })}
                     <p>
-                      <strong className="text-[#20251f]">우선조건</strong> ·{" "}
+                      <strong className="text-[#20251f]">우선 조건</strong> ·{" "}
                       {request.mustHaves.find((item) => item.startsWith("우선조건:"))?.replace("우선조건: ", "") ?? "채광, 조용한 주변"}
                     </p>
                     <p>
@@ -3964,7 +3988,7 @@ export function BdbApp({
                         매물 제안 · {agentProposalStep + 1} / 4
                       </p>
                       <h3 className="mt-1 text-xl font-extrabold text-[#1D2723]">
-                        {["고객 요청 확인", "제안할 매물 선택", "중개보수 입력", "최종 확인 및 전송"][agentProposalStep]}
+                        {["고객 요청 확인", "제안할 매물 선택", "매물별 제안 중개보수 입력", "최종 확인 및 전송"][agentProposalStep]}
                       </h3>
                       <p className="mt-2 text-sm leading-6 text-[#69736F]">
                         {agentProposalStepDescriptions[agentProposalStep]}
@@ -4090,6 +4114,7 @@ export function BdbApp({
                           type="button"
                           onClick={() => {
                             setAgentTab("properties");
+                            setIsPropertyFormOpen(true);
                             resetAgentProposalDraft();
                           }}
                           className="min-h-11 rounded-xl border border-[#356556] bg-white px-4 py-2 text-sm font-extrabold text-[#183F35]"
@@ -4498,9 +4523,16 @@ export function BdbApp({
                           {proposal.message}
                         </p>
                       </div>
-                      <span className="rounded-full bg-[#edf6ef] px-3 py-1 text-xs font-bold text-[#33523a]">
-                        {proposal.createdAt}
-                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {!showBuyerDashboard ? (
+                          <span className="rounded-full border border-[#b7c8bf] bg-[#EAF2EE] px-3 py-1 text-xs font-extrabold text-[#183F35]">
+                            {getProposalStatusLabel(proposal.status)}
+                          </span>
+                        ) : null}
+                        <span className="rounded-full bg-[#edf6ef] px-3 py-1 text-xs font-bold text-[#33523a]">
+                          {proposal.createdAt}
+                        </span>
+                      </div>
                     </div>
                     <div className="mt-4 grid gap-3 lg:grid-cols-2">
                       {proposal.properties.map((property) => {

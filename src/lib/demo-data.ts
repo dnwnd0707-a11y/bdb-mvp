@@ -81,7 +81,7 @@ export const proposals: Proposal[] = [
     message:
       "반려견 가능 조건을 우선 확인했고, 대구 서구 내당동·평리동 생활권에서 채광 좋은 집 3곳만 골랐습니다.",
     createdAt: "오늘 14:20",
-    status: "new",
+    status: "chatting",
     properties: [
       {
         id: "home-1",
