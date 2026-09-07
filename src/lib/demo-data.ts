@@ -74,10 +74,10 @@ export const proposals: Proposal[] = [
   {
     id: "prop-501",
     requestId: "req-101",
-    agentId: "agent-park-soyeon",
-    officeId: "office-seogu-woori",
-    agentName: "박소연 중개사",
-    officeName: "서구우리공인중개사",
+    agentId: "agent-demo-primary",
+    officeId: "office-demo-primary",
+    agentName: "○○○ 대표공인중개사",
+    officeName: "○○공인중개사사무소",
     message:
       "반려견 가능 조건을 우선 확인했고, 대구 서구 내당동·평리동 생활권에서 채광 좋은 집 3곳만 골랐습니다.",
     createdAt: "오늘 14:20",
@@ -148,10 +148,10 @@ export const proposals: Proposal[] = [
   {
     id: "prop-502",
     requestId: "req-101",
-    agentId: "agent-kim-doyun",
-    officeId: "office-dongne-good",
-    agentName: "김도윤 중개사",
-    officeName: "동네좋은공인중개사",
+    agentId: "agent-demo-competitor",
+    officeId: "office-demo-competitor",
+    agentName: "△△△ 공인중개사",
+    officeName: "△△공인중개사사무소",
     message:
       "동일한 내당동 투룸을 다른 조건으로 안내하는 둘러보기용 예시입니다. 제안 중개보수를 비교해볼 수 있습니다.",
     createdAt: "오늘 15:05",
@@ -255,7 +255,7 @@ export const viewingAppointments: ViewingAppointment[] = [
     id: "view-1",
     proposalId: "prop-501",
     buyerName: "민지",
-    agentName: "박소연 중개사",
+    agentName: "○○○ 대표공인중개사",
     scheduledFor: "내일 15:00",
     viewingFee: 0,
     status: "confirmed",

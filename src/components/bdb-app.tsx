@@ -100,6 +100,9 @@ const agentKindCopy: Record<AgentKind, string> = {
   affiliated: "소속 공인중개사",
 };
 
+const demoAgentName = "○○○ 대표공인중개사";
+const demoOfficeName = "○○공인중개사사무소";
+
 const formatter = new Intl.NumberFormat("ko-KR");
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -1647,7 +1650,7 @@ export function BdbApp({
   const [profilePhone, setProfilePhone] = useState("010-0000-0000");
   const [profileAvatarUrl, setProfileAvatarUrl] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [officeName, setOfficeName] = useState("서구좋은공인중개사");
+  const [officeName, setOfficeName] = useState(demoOfficeName);
   const [licenseNumber, setLicenseNumber] = useState("27170-2026-00123");
   const [representativeLicenseNumber, setRepresentativeLicenseNumber] =
     useState("27170-2026-00123");
@@ -1685,7 +1688,13 @@ export function BdbApp({
   const visibleProposals = proposals.filter(
     (proposal) => proposal.requestId === activeRequestId
   );
-  const displayedProposals = role === "agent" ? proposals : visibleProposals;
+  const displayedProposals =
+    role === "agent"
+      ? proposals.filter(
+          (proposal) =>
+            proposal.officeName === demoOfficeName && proposal.agentName === demoAgentName
+        )
+      : visibleProposals;
   const selectedProposal = visibleProposals[0];
   const proposalComparisonItems: ProposalComparisonItem[] = visibleProposals.flatMap((proposal) =>
     proposal.properties.map((property) => ({
@@ -1834,7 +1843,12 @@ export function BdbApp({
       appointmentTotal: appointments.length,
       feedTotal: agentProperties.length,
       renewalNeeded: renewalNeededPropertyIds.filter(Boolean).length,
-      activeProposals: proposals.filter((proposal) => proposal.status !== "hidden").length,
+      activeProposals: proposals.filter(
+        (proposal) =>
+          proposal.status !== "hidden" &&
+          proposal.officeName === demoOfficeName &&
+          proposal.agentName === demoAgentName
+      ).length,
     }),
     [agentProperties.length, appointments.length, proposals, renewalNeededPropertyIds, reports, requests]
   );
@@ -2126,8 +2140,10 @@ export function BdbApp({
     const proposal: Proposal = {
       id: newProposalId,
       requestId: request.id,
-      agentName: "김도윤 중개사",
-      officeName: "동네좋은공인중개사",
+      agentId: "agent-demo-primary",
+      officeId: "office-demo-primary",
+      agentName: demoAgentName,
+      officeName: demoOfficeName,
       message: `예산과 필수 조건을 기준으로 바로 방문 가능한 매물 ${selectedProposalProperties.length}곳을 묶었습니다.`,
       createdAt: "방금",
       status: "new",
@@ -4782,10 +4798,16 @@ export function BdbApp({
               <Upload size={22} aria-hidden="true" />
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {["사무소명", "대표자명", "중개사 등록번호", "담당 지역"].map((label) => (
+              {[
+                ["사무소명", demoOfficeName],
+                ["대표자명", demoAgentName],
+                ["중개사 등록번호", licenseNumber],
+                ["담당 지역", "대구광역시 서구"],
+              ].map(([label, value]) => (
                 <input
                   key={label}
                   placeholder={label}
+                  defaultValue={value}
                   className="min-h-11 rounded-lg border border-[#d9d0c0] px-3"
                 />
               ))}
@@ -4830,7 +4852,7 @@ export function BdbApp({
               <div className="rounded-lg border border-[#d9d0c0] p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                        <p className="font-bold">서구우리공인중개사</p>
+                        <p className="font-bold">{demoOfficeName}</p>
                         <p className="text-sm text-[#677064]">등록번호 27170-2026-00123</p>
                   </div>
                   <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#2f6f45] px-3 py-2 text-sm font-bold text-white">
